@@ -18,7 +18,7 @@ void UGASDemo_AttributeSet::PostInitProperties()
 	MaxHealth.SetBaseValue(100.0f);
     Health.SetBaseValue(MaxHealth.GetBaseValue());
     
-    MaxMana.SetBaseValue(50.0f);
+    MaxMana.SetBaseValue(100.0f);
     Mana.SetBaseValue(MaxMana.GetBaseValue());
     
     MaxStamina.SetBaseValue(100.0f);

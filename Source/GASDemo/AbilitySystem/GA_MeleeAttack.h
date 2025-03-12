@@ -16,7 +16,17 @@ class GASDEMO_API UGA_MeleeAttack : public UGASDemo_GameplayAbility
 	
 public:
 	UGA_MeleeAttack();
-    
+
+	UFUNCTION()
+	void OnMontageCompleted();
+	UFUNCTION()
+	void OnMontageBlendOut();
+	UFUNCTION()
+	void OnMontageCancelled();
+	UFUNCTION()
+	void OnMontageInterrupted();
+	UFUNCTION()
+	void OnMeleeHitEventReceived(FGameplayEventData Payload);
 	// Implement ability
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 							   const FGameplayAbilityActorInfo* ActorInfo, 
@@ -36,6 +46,9 @@ public:
 	// Gameplay Effect to apply
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	TArray<UAnimMontage*> AttackAnimations;
     
 	// Attack range
 	UPROPERTY(EditDefaultsOnly, Category = "Attack")

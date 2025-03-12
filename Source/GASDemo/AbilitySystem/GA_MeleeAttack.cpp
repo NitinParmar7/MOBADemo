@@ -3,6 +3,8 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/Character.h"
 #include "GASDemo/GASDemoCharacter.h"
@@ -36,24 +38,74 @@ UGA_MeleeAttack::UGA_MeleeAttack()
     NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 }
 
+void UGA_MeleeAttack::OnMontageCompleted()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UGA_MeleeAttack::OnMontageBlendOut()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UGA_MeleeAttack::OnMontageCancelled()
+{
+    CancelAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true);
+}
+
+void UGA_MeleeAttack::OnMontageInterrupted()
+{
+    CancelAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true);
+}
+
+void UGA_MeleeAttack::OnMeleeHitEventReceived(FGameplayEventData Payload)
+{
+    PerformMeleeAttack();
+}
+
 void UGA_MeleeAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
-                                    const FGameplayAbilityActorInfo* ActorInfo, 
-                                    const FGameplayAbilityActivationInfo ActivationInfo, 
-                                    const FGameplayEventData* TriggerEventData)
+                                      const FGameplayAbilityActorInfo* ActorInfo, 
+                                      const FGameplayAbilityActivationInfo ActivationInfo, 
+                                      const FGameplayEventData* TriggerEventData)
 {
     if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-    
+
     // Play montage
-    if (AbilityMontage)
+    if (UAnimMontage* TempAnimation = AttackAnimations.Num() ? AttackAnimations[FMath::RandRange(0, AttackAnimations.Num() - 1)] : AbilityMontage)
     {
-        PlayAbilityMontage(AbilityMontage, 1.0f);
+       UAbilityTask_PlayMontageAndWait* Task = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+            this,
+            NAME_None,
+            TempAnimation,
+            1.0f,
+            NAME_None,
+            true,
+            true
+        );
         
-        // Note: The actual damage application will happen through an animation notify
-        // that calls PerformMeleeAttack or through direct call in Blueprint
+        if (Task)
+        {
+            Task->OnCompleted.AddDynamic(this, &UGA_MeleeAttack::OnMontageCompleted);
+            Task->OnBlendOut.AddDynamic(this, &UGA_MeleeAttack::OnMontageBlendOut);
+            Task->OnCancelled.AddDynamic(this, &UGA_MeleeAttack::OnMontageCancelled);
+            Task->OnInterrupted.AddDynamic(this, &UGA_MeleeAttack::OnMontageInterrupted);
+            Task->ReadyForActivation();
+
+            UAbilityTask_WaitGameplayEvent* WaitEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+                this,
+                FGameplayTag::RequestGameplayTag(FName("Ability.AnimNotify.MeleeHit")),
+                nullptr,
+                true,
+                true
+            );
+
+            WaitEventTask->EventReceived.AddDynamic(this, &UGA_MeleeAttack::OnMeleeHitEventReceived);
+            WaitEventTask->ReadyForActivation();
+        }
     }
     else
     {

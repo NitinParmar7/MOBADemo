@@ -17,7 +17,7 @@ UGA_Dash::UGA_Dash()
     GameplayTagContainer.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Movement.Dash")));
     SetAssetTags(GameplayTagContainer);
     
-    // Setup cancelation tags
+    // Setup cancellation tags
     FGameplayTagContainer CancelTags;
     CancelTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Attack")));
     BlockAbilitiesWithTag = CancelTags;

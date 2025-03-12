@@ -280,7 +280,7 @@ void AGASDemoCharacter::Look(const FInputActionValue& Value)
 
 void AGASDemoCharacter::InitializeAbilities()
 {
-	if (GetLocalRole() != ROLE_Authority || !AbilitySystemComponent || !AbilitySystemComponent->bCharacterAbilitiesInitialized)
+	if (GetLocalRole() != ROLE_Authority || !AbilitySystemComponent || AbilitySystemComponent->bCharacterAbilitiesInitialized)
 	{
 		return;
 	}
@@ -322,8 +322,7 @@ void AGASDemoCharacter::ApplyStartupEffects()
 	{
 		if (StartupEffect)
 		{
-			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(StartupEffect, AbilityLevel, EffectContext);
-			if (SpecHandle.IsValid())
+			if (FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(StartupEffect, AbilityLevel, EffectContext); SpecHandle.IsValid())
 			{
 				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 			}
